@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNG based off of Mouse movement</title>
+</head>
+
+<body>
+    <button onclick="stopRNG()">Stop</button><br>
+    <p id="instructions">Move your mouse, and don't stop moving it until, your have a password of enough length.<br>This
+        logic is broken and only just works, so don't take this as exmaple code. Also don't tell me something is broken,
+        I know, I just can't be bothered to fix it.</p>
+    <input type="number" name="speed" id="speed" min="200" max="10000" value="500">
+    <span id="main"></span>
+    <button onclick="go()" id="goBtn">Go</button>
+    <script>
+        firstTime = true;
+        bDoLogic = true;
+        function go() {
+            bDoLogic = true;
+            begin();
+            setTimeout(() => {
+                document.getElementById("speed").outerHTML = "";
+                document.getElementById("instructions").outerHTML = "";
+                // document.getElementById("goBtn").outerHTML = "";
+            }, 50);
+        }
+        function stopRNG() {
+            // document.getElementById(livetrackerId).outerHTML = "";
+            bDoLogic = !bDoLogic;
+        }
+        function begin() {
+            if (firstTime) speed = document.getElementById("speed").value;
+            const b62toB94 = s => { const A62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', A94 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+`1234567890-=[]\\\\{}|;\\\':\",./<>?'; const toInt = t => t.split('').reduce((n, c) => n * BigInt(62) + BigInt(A62.indexOf(c)), BigInt(0)); const fromInt = n => n === BigInt(0) ? A94[0] : (() => { let r = ''; while (n > 0) { r = A94[Number(n % BigInt(94))] + r; n /= BigInt(94); } return r; })(); return fromInt(toInt(s)); };
+            const b10toB94 = s => { const A10 = '0123456789', A94 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^&*()_+`1234567890-=[]\\\\{}|;\\\':\",./<>?'; const toInt = t => t.split('').reduce((n, c) => n * BigInt(10) + BigInt(A10.indexOf(c)), BigInt(0)); const fromInt = n => n === BigInt(0) ? A94[0] : (() => { let r = ''; while (n > 0) { r = A94[Number(n % BigInt(94))] + r; n /= BigInt(94); } return r; })(); return fromInt(toInt(s)); };
+            let mouseX = [];
+            let mouseY = [];
+            let rgn = [];
+            let arn = [0, 0, 0];
+            let lastX = null;
+            let lastY = null;
+            window.addEventListener('mousemove', (e) => {
+                const x = e.clientX;
+                const y = e.clientY;
+                if (x !== lastX) {
+                    mouseX.push(x);
+                    lastX = x;
+                }
+                if (y !== lastY) {
+                    mouseY.push(y);
+                    lastY = y;
+                }
+            });
+            function hashArrayToFloat(arr) {
+                let h = 2166136261 >>> 0;
+                for (let v of arr) {
+                    let x = (v | 0) >>> 0;
+                    h ^= x;
+                    h = Math.imul(h, 16777619) >>> 0;
+                    h = (h ^ (h >>> 13)) >>> 0;
+                    h = Math.imul(h, 2246822519) >>> 0;
+                    h = (h ^ (h >>> 16)) >>> 0;
+                }
+                return h / 0x100000000;
+            }
+            let xR = 1;
+            let yR = 1;
+            let rnA;
+            let rnB;
+            let rn;
+            livetrackerId = Math.floor(Math.random() * 1000);
+            span = document.getElementById("main");
+            p = document.createElement("textarea");
+            p.id = livetrackerId;
+            p.class = "generatedContent";
+            span.append(p);
+            setInterval(() => {
+                xR = hashArrayToFloat(mouseX);
+                mouseX = mouseX.slice(Math.floor(yR * 2) + 1);
+                yR = hashArrayToFloat(mouseY);
+                mouseY = mouseY.slice(Math.floor(xR * 2) + 1);
+                rnA = (3 * xR + 2 * yR) / 5;
+                rnB = (2 * xR + 3 * yR) / 5;
+                rn = (rnA + rnB) / 2;
+                rgn.push(rn);
+                arn[0] = arn[0] + 1;
+                arn[1] = arn[1] + rn;
+                arn[2] = arn[1] / arn[0];
+                p = document.getElementById(livetrackerId);
+                if (bDoLogic) {
+                    p.value = `${p.value}${b10toB94(String(xR + yR).slice(2))}`;
+                }
+            }, speed);
+            firstTime = false;
+        }
+    </script>
+</body>
+
+</html>
